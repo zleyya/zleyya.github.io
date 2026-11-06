@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="id"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SIFAS — Sistem Informasi Fasilitas Sekolah</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<style>
+/* ===== Warna utama (ubah di sini untuk mengganti tema) ===== */
+:root{--pink:#f9a8d4;--pink-l:#fdf2f8;--ungu:#8b5cf6;--ungu-l:#ede9fe;--teks:#3b2f4a;--abu:#7c7390;
+--hijau:#16a34a;--kuning:#d97706;--merah:#dc2626;--r:16px;--sh:0 6px 20px rgba(139,92,246,.12)}
+*{box-sizing:border-box;margin:0}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:linear-gradient(135deg,var(--pink-l),var(--ungu-l));color:var(--teks);min-height:100vh}
+.hidden{display:none!important}
+
+/* ===== Sidebar ===== */
+.sidebar{position:fixed;inset:0 auto 0 0;width:240px;background:#fce7f3;padding:20px 14px;box-shadow:var(--sh);z-index:20;transition:transform .3s}
+.brand{display:flex;gap:10px;align-items:center;margin-bottom:24px;padding:0 8px}
+.brand i{font-size:28px;color:var(--ungu)}.brand small{display:block;color:var(--abu)}
+nav a,nav button{display:flex;gap:12px;align-items:center;width:100%;padding:12px 14px;margin-bottom:6px;border:0;background:none;border-radius:12px;font-size:15px;color:var(--teks);cursor:pointer;transition:.2s}
+nav a:hover,nav button:hover{background:#fbcfe8}
+nav a.active,nav button.active{background:#f9a8d4;color:#5b21b6;font-weight:600}
+.menu-btn{display:none;position:fixed;top:12px;left:12px;z-index:30;width:42px;height:42px;border:0;border-radius:12px;background:var(--ungu);color:#fff;font-size:18px}
+
+main{margin-left:240px;padding:28px;max-width:1200px}
+.page{animation:fade .4s ease}
+@keyframes fade{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+
+/* ===== Komponen umum ===== */
+.card{background:#fff;border-radius:var(--r);padding:20px;box-shadow:var(--sh)}
+.head{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:16px}
+.head h2 i{color:var(--ungu);margin-right:6px}
+.btn{padding:10px 18px;border:0;border-radius:12px;background:linear-gradient(90deg,var(--pink),var(--ungu));color:#fff;font-weight:600;cursor:pointer;transition:transform .15s}
+.btn:active{transform:scale(.94)}.btn:hover{filter:brightness(1.05)}
+.btn:disabled{opacity:.6;cursor:wait}
+.btn.ghost{background:#fff;color:var(--ungu);border:1px solid var(--ungu)}
+.btn.danger{background:var(--merah)}.btn.sm{padding:5px 10px;font-size:13px}
+input,select,textarea{width:100%;padding:10px 12px;border:1px solid #e0d7f0;border-radius:10px;font:inherit;background:#fff}
+input:focus,select:focus,textarea:focus{outline:2px solid var(--pink);border-color:var(--ungu)}
+.toolbar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px}.toolbar>*{flex:1;min-width:150px}
+.badge{display:inline-block;padding:3px 10px;border-radius:99px;font-size:12px;font-weight:600}
+.green{background:#dcfce7;color:var(--hijau)}.yellow{background:#fef3c7;color:var(--kuning)}.red{background:#fee2e2;color:var(--merah)}
+.purple{background:var(--ungu-l);color:var(--ungu)}.pink{background:#fce7f3;color:#db2777}
+
+/* ===== Dashboard ===== */
+.hero{display:flex;align-items:center;gap:16px;background:linear-gradient(120deg,var(--pink),var(--ungu));color:#fff;padding:24px;border-radius:var(--r);margin-bottom:20px}
+.logo{width:64px;height:64px;border-radius:18px;background:#fff3;display:grid;place-items:center;font-size:30px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:16px;margin-bottom:20px}
+.stat{text-align:center;transition:transform .2s}.stat:hover{transform:translateY(-4px)}
+.stat i{font-size:24px;color:var(--ungu)}.stat h2{font-size:34px;margin:6px 0}.stat p{color:var(--abu)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.chartbox{height:260px}
+.item{padding:10px 0;border-bottom:1px solid #f1eaf8;display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}
+
+/* ===== Kartu fasilitas ===== */
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:16px}
+.fac{padding:0;overflow:hidden;transition:transform .2s}.fac:hover{transform:translateY(-4px)}
+.photo{height:130px;display:grid;place-items:center;font-size:44px;color:#fff;background:linear-gradient(135deg,var(--pink),var(--ungu)) center/cover}
+.fac .body{padding:14px}.fac p{color:var(--abu);font-size:14px;margin:4px 0}
+
+/* ===== Form & tabel ===== */
+.form{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.form label{font-size:14px;font-weight:600;display:grid;gap:5px}.form .full{grid-column:1/-1}
+.login{max-width:420px;margin:auto}.note{font-size:13px;color:var(--abu)}
+.tabs{display:flex;gap:8px;margin-bottom:12px}
+.tabs button{padding:8px 18px;border:0;border-radius:99px;background:#fff;cursor:pointer}
+.tabs button.active{background:var(--ungu);color:#fff}
+.tbl{overflow-x:auto;margin-top:12px}table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{padding:10px;text-align:left;border-bottom:1px solid #f1eaf8;white-space:nowrap}th{background:var(--pink-l)}
+td select{padding:5px}
+.progress{height:8px;background:#eee;border-radius:9px;margin-top:10px;overflow:hidden}
+.progress div{height:100%;background:linear-gradient(90deg,var(--pink),var(--ungu));transition:width .5s}
+.rep{margin-bottom:12px}.empty{text-align:center;padding:30px;color:var(--abu)}.empty i{font-size:40px;color:var(--pink);display:block;margin-bottom:8px}
+dialog{border:0;border-radius:var(--r);padding:20px;width:min(560px,92vw);box-shadow:var(--sh)}dialog::backdrop{background:#3b2f4a66}
+#toast{position:fixed;right:20px;bottom:20px;background:var(--hijau);color:#fff;padding:12px 18px;border-radius:12px;transform:translateY(100px);opacity:0;transition:.4s;z-index:50}
+#toast.show{transform:none;opacity:1}
+
+/* ===== Foto laporan (disimpan sebagai Blob di IndexedDB) ===== */
+.thumb{display:block;max-width:180px;max-height:120px;margin-top:10px;border-radius:10px;object-fit:cover;cursor:zoom-in;border:1px solid #eadff7}
+.thumb.sm{display:inline-block;max-width:64px;max-height:46px;margin:0 0 0 6px;vertical-align:middle}
+#imgModal{width:min(900px,94vw);padding:10px;cursor:zoom-out}
+#imgModal img{display:block;max-width:100%;max-height:82vh;margin:auto;border-radius:10px}
+
+/* ===== Responsif (HP) ===== */
+@media(max-width:800px){
+  .sidebar{transform:translateX(-100%)}.sidebar.open{transform:none}
+  .menu-btn{display:block}main{margin-left:0;padding:70px 14px 20px}
+  .grid2,.form{grid-template-columns:1fr}
+}
+
+/* ===== Multi-halaman: publik vs admin ===== */
+nav a{text-decoration:none}nav hr{border:0;border-top:1px solid #0001;margin:12px 0}
+a.btn{display:inline-block;text-decoration:none}
+.role-tag{background:var(--ungu);color:#fff;border-radius:6px;padding:1px 7px;font-size:11px;display:inline-block;margin-top:2px}
+
+body.admin .sidebar{background:var(--ungu-l)}
+body.admin nav a:hover,body.admin nav button:hover{background:#ddd6fe}
+body.admin nav a.active{background:var(--ungu);color:#fff}
+body.admin .hero{background:linear-gradient(120deg,var(--ungu),#6d28d9)}
+body.auth main{margin:0;max-width:none;min-height:100vh;display:grid;place-items:center}
+body.auth .page{width:100%}
+
+/* ===== Mode satu file ===== */
+body.auth .sidebar,body.auth .menu-btn{display:none!important}
+body:not(.admin) #sideAdm,body.admin #sidePub{display:none}
+</style></head>
+<body>
+<button class="menu-btn" onclick="toggleMenu()" aria-label="Menu"><i class="fa-solid fa-bars"></i></button>
+<aside class="sidebar" id="sidePub"><div class="brand"><i class="fa-solid fa-book-open-reader"></i><div><b>SIFAS</b><small>Fs. School</small></div></div><nav><a href="#/dash" data-p="dash"><i class="fa-solid fa-house"></i> Dashboard</a><a href="#/fasilitas" data-p="fasilitas"><i class="fa-solid fa-building"></i> Data Fasilitas</a><a href="#/lapor" data-p="lapor"><i class="fa-solid fa-triangle-exclamation"></i> Lapor Kerusakan</a><a href="#/status" data-p="status"><i class="fa-solid fa-list-check"></i> Status Laporan</a><hr><a href="#/login"><i class="fa-solid fa-user-shield"></i> Login Admin</a></nav></aside>
+<aside class="sidebar" id="sideAdm"><div class="brand"><i class="fa-solid fa-book-open-reader"></i><div><b>SIFAS</b><span class="role-tag">PANEL ADMIN</span></div></div><nav><a href="#/adash" data-p="adash"><i class="fa-solid fa-gauge"></i> Dashboard</a><a href="#/afas" data-p="afas"><i class="fa-solid fa-building"></i> Kelola Fasilitas</a><a href="#/alap" data-p="alap"><i class="fa-solid fa-clipboard-check"></i> Laporan Masuk</a><a href="#/ajad" data-p="ajad"><i class="fa-solid fa-calendar-days"></i> Jadwal Fasilitas</a><hr><a href="#/dash"><i class="fa-solid fa-globe"></i> Lihat Situs Publik</a><button onclick="openPw()"><i class="fa-solid fa-key"></i> Ganti Password</button><button onclick="logout()"><i class="fa-solid fa-right-from-bracket"></i> Logout</button></nav></aside>
+<main>
+<section class="page view hidden" id="v-dash">
+<div class="hero"><div class="logo"><i class="fa-solid fa-book-open"></i></div><div><h1>Welcome to Fs. School</h1><p>SIFAS — Sistem Informasi Fasilitas Sekolah</p></div></div><p style="margin-bottom:16px"><a class="btn" href="#/lapor"><i class="fa-solid fa-triangle-exclamation"></i> Laporkan Kerusakan</a></p>
+<div class="stats">
+<div class="card stat"><i class="fa-solid fa-school"></i><h2 id="sTotal">0</h2><p>Seluruh Fasilitas</p></div>
+<div class="card stat"><i class="fa-solid fa-circle-check"></i><h2 id="sBaik">0</h2><p>Kondisi Baik</p></div>
+<div class="card stat"><i class="fa-solid fa-screwdriver-wrench"></i><h2 id="sRusak">0</h2><p>Perlu Perbaikan</p></div>
+<div class="card stat"><i class="fa-solid fa-flag-checkered"></i><h2 id="sSelesai">0</h2><p>Laporan Selesai</p></div></div>
+<div class="grid2"><div class="card"><h3>Kondisi Fasilitas</h3><div class="chartbox"><canvas id="chart"></canvas></div></div>
+<div class="card"><h3>Laporan Terbaru</h3><div id="latest"></div></div></div>
+</section>
+<section class="page view hidden" id="v-fasilitas">
+<div class="head"><h2><i class="fa-solid fa-building"></i> Data Fasilitas</h2><div><a class="btn ghost" href="#/dash"><i class="fa-solid fa-arrow-left"></i> Dashboard</a></div></div><div class="toolbar"><input id="fSearch" placeholder="🔍 Cari fasilitas..." oninput="renderFas()"><select id="fKat" onchange="renderFas()"></select><select id="fKond" onchange="renderFas()"></select></div><div id="facList" class="cards"></div>
+</section>
+<section class="page view hidden" id="v-lapor">
+<div class="head"><h2><i class="fa-solid fa-triangle-exclamation"></i> Laporan Kerusakan</h2><div><a class="btn ghost" href="#/dash"><i class="fa-solid fa-arrow-left"></i> Dashboard</a></div></div><form class="card form" onsubmit="submitReport(event)">
+<label>Nama pelapor<input name="pelapor" required></label><label>Kelas<input name="kelas" placeholder="contoh: XI IPA 2" required></label>
+<label>Fasilitas yang rusak<select name="fasilitas" id="rFas" required></select></label><label>Lokasi kerusakan<input name="lokasi" required></label>
+<label>Tanggal laporan<input type="date" name="tanggal" id="rTgl" required></label>
+<label>Tingkat urgensi<select name="urgensi"><option>Rendah</option><option selected>Sedang</option><option>Tinggi</option></select></label>
+<label class="full">Deskripsi kerusakan<textarea name="deskripsi" rows="3" required></textarea></label>
+<label class="full">Foto kerusakan (opsional, maks. 10 MB — otomatis dikompres)<input type="file" name="foto" id="rFoto" accept="image/*" onchange="previewFoto(this)"><img id="rPrev" class="thumb hidden" alt="Pratinjau foto"></label>
+<button class="btn full" type="submit"><i class="fa-solid fa-paper-plane"></i> Kirim Laporan</button></form>
+</section>
+<section class="page view hidden" id="v-status">
+<div class="head"><h2><i class="fa-solid fa-list-check"></i> Status Laporan</h2><div><a class="btn ghost" href="#/dash"><i class="fa-solid fa-arrow-left"></i> Dashboard</a></div></div><div class="toolbar"><input id="sSearch" placeholder="🔍 Cari nomor laporan / nama fasilitas..." oninput="renderStatus()"></div><div id="statusList"></div>
+</section>
+<section class="page view hidden" id="v-login">
+<form class="card form login" onsubmit="login(event)"><h3 class="full"><i class="fa-solid fa-user-shield"></i> Login Admin</h3>
+<label class="full">Username<input id="uName" autocomplete="username" required></label><label class="full">Password<input id="uPass" type="password" autocomplete="current-password" required></label>
+<button class="btn full">Masuk</button><a class="btn ghost full" style="text-align:center" href="#/dash">← Kembali ke situs publik</a>
+<p class="note full">Akun awal: <b>admin</b> / <b>admin123</b> — segera ganti lewat menu <i>Ganti Password</i> di panel admin. ⚠️ Akun disimpan (di-hash) di IndexedDB browser ini; autentikasi tetap hanya di sisi browser dan <b>belum aman</b> untuk produksi tanpa server.</p></form>
+</section>
+<section class="page view hidden" id="v-adash">
+<div class="hero"><div class="logo"><i class="fa-solid fa-book-open"></i></div><div><h1>Panel Admin Fs. School</h1><p>Kelola fasilitas, laporan, dan jadwal sekolah</p></div></div>
+<div class="stats">
+<div class="card stat"><i class="fa-solid fa-school"></i><h2 id="sTotal">0</h2><p>Seluruh Fasilitas</p></div>
+<div class="card stat"><i class="fa-solid fa-circle-check"></i><h2 id="sBaik">0</h2><p>Kondisi Baik</p></div>
+<div class="card stat"><i class="fa-solid fa-screwdriver-wrench"></i><h2 id="sRusak">0</h2><p>Perlu Perbaikan</p></div>
+<div class="card stat"><i class="fa-solid fa-flag-checkered"></i><h2 id="sSelesai">0</h2><p>Laporan Selesai</p></div></div>
+<div class="grid2"><div class="card"><h3>Kondisi Fasilitas</h3><div class="chartbox"><canvas id="chart"></canvas></div></div>
+<div class="card"><h3>Laporan Terbaru</h3><div id="latest"></div></div></div>
+</section>
+<section class="page view hidden" id="v-afas">
+<div class="head"><h2><i class="fa-solid fa-building"></i> Kelola Fasilitas</h2><div><button class="btn" onclick="openFac()"><i class="fa-solid fa-plus"></i> Tambah Fasilitas</button></div></div><div class="card"><div class="tbl" id="aFac"></div></div>
+<dialog id="modal"><form id="facForm" class="form" onsubmit="saveFac(event)"><h3 class="full" id="mTitle">Fasilitas</h3><input type="hidden" name="id">
+<label>Nama<input name="nama" required></label><label>Kategori<select name="kategori" id="mKat"></select></label>
+<label>Lokasi<input name="lokasi" required></label><label>Jumlah<input type="number" min="1" name="jumlah" required></label>
+<label>Kondisi<select name="kondisi" id="mKond"></select></label><label>Foto (URL, opsional)<input name="foto" placeholder="https://..."></label>
+<label class="full">Deskripsi<textarea name="deskripsi" rows="2"></textarea></label>
+<button class="btn">Simpan</button><button class="btn ghost" type="button" onclick="document.getElementById('modal').close()">Batal</button></form></dialog>
+</section>
+<section class="page view hidden" id="v-alap">
+<div class="head"><h2><i class="fa-solid fa-clipboard-check"></i> Laporan Masuk</h2><div></div></div><div class="card"><div class="tbl" id="aRep"></div></div>
+</section>
+<section class="page view hidden" id="v-ajad">
+<div class="head"><h2><i class="fa-solid fa-calendar-days"></i> Jadwal Penggunaan Fasilitas</h2><div></div></div><div class="card"><form class="toolbar" onsubmit="addJadwal(event)"><select id="jFas" required></select><input type="date" id="jTgl" required><input id="jJam" placeholder="07:00–09:00" required><input id="jKeg" placeholder="Kegiatan" required><button class="btn"><i class="fa-solid fa-plus"></i> Tambah</button></form><div class="tbl" id="aJad"></div></div>
+</section>
+</main>
+
+<!-- Lightbox foto laporan -->
+<dialog id="imgModal" onclick="this.close()"><img id="imgBig" alt="Foto kerusakan"></dialog>
+<!-- Dialog ganti password admin -->
+<dialog id="pwModal"><form class="form" onsubmit="changePw(event)"><h3 class="full"><i class="fa-solid fa-key"></i> Ganti Password</h3>
+<label class="full">Password lama<input id="pwOld" type="password" autocomplete="current-password" required></label>
+<label class="full">Password baru (min. 6 karakter)<input id="pwNew" type="password" minlength="6" autocomplete="new-password" required></label>
+<label class="full">Ulangi password baru<input id="pwNew2" type="password" minlength="6" autocomplete="new-password" required></label>
+<button class="btn">Simpan</button><button class="btn ghost" type="button" onclick="document.getElementById('pwModal').close()">Batal</button></form></dialog>
+<div id="toast"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script>
+/* ===== SIFAS — penyimpanan IndexedDB =====
+   Database "sifas" (versi 1) berisi 5 object store:
+     f      = fasilitas            (key: id, auto-increment)
+     r      = laporan kerusakan    (key: id, auto-increment; field foto = Blob)
+     j      = jadwal fasilitas     (key: id, auto-increment)
+     users  = akun admin           (key: username; password di-hash + salt)
+     meta   = penanda internal     (key: key)
+   Data di memori (db.f/db.r/db.j) selalu dimuat ulang dari IndexedDB setiap pindah halaman,
+   jadi IndexedDB adalah satu-satunya sumber data. */
+const $ = s => document.querySelector(s);
+
+// ---------- Konstanta ----------
+const CAT = { Pembelajaran:'fa-chalkboard-user', Penunjang:'fa-book-open', Administrasi:'fa-briefcase', Sanitasi:'fa-restroom', Kesehatan:'fa-briefcase-medical', Umum:'fa-people-roof' };
+const COND = { baik:['Baik','green'], perawatan:['Perlu Perawatan','yellow'], rusak:['Rusak','red'] };
+const STAT = ['Menunggu verifikasi','Sedang diproses','Dalam perbaikan','Selesai'];
+const STAT_CLS = ['yellow','purple','pink','green'];
+const URG_CLS = { Rendah:'green', Sedang:'yellow', Tinggi:'red' };
+
+// ---------- Data contoh (dipakai hanya saat database pertama kali dibuat) ----------
+const SEED = {
+  f: [
+    {id:1,nama:'Ruang Kelas',kategori:'Pembelajaran',lokasi:'Gedung A, Lt. 1-2',jumlah:18,kondisi:'baik',deskripsi:'Ruang belajar dengan AC dan proyektor.'},
+    {id:2,nama:'Perpustakaan',kategori:'Penunjang',lokasi:'Gedung B, Lt. 1',jumlah:1,kondisi:'baik',deskripsi:'Koleksi buku dan area baca nyaman.'},
+    {id:3,nama:'Laboratorium Komputer',kategori:'Pembelajaran',lokasi:'Gedung B, Lt. 2',jumlah:2,kondisi:'perawatan',deskripsi:'30 unit komputer, beberapa perlu servis.'},
+    {id:4,nama:'Laboratorium IPA',kategori:'Pembelajaran',lokasi:'Gedung C, Lt. 1',jumlah:1,kondisi:'baik',deskripsi:'Alat praktikum fisika, kimia, dan biologi.'},
+    {id:5,nama:'Ruang Guru',kategori:'Administrasi',lokasi:'Gedung A, Lt. 1',jumlah:1,kondisi:'baik',deskripsi:'Ruang kerja dan rapat guru.'},
+    {id:6,nama:'Ruang Kepala Sekolah',kategori:'Administrasi',lokasi:'Gedung A, Lt. 1',jumlah:1,kondisi:'baik',deskripsi:'Ruang kerja kepala sekolah.'},
+    {id:7,nama:'Toilet Siswa',kategori:'Sanitasi',lokasi:'Belakang Gedung A',jumlah:8,kondisi:'rusak',deskripsi:'Beberapa keran dan pintu rusak.'},
+    {id:8,nama:'UKS',kategori:'Kesehatan',lokasi:'Gedung C, Lt. 1',jumlah:1,kondisi:'perawatan',deskripsi:'Ruang kesehatan, obat perlu dilengkapi.'},
+    {id:9,nama:'Aula Sekolah',kategori:'Umum',lokasi:'Gedung D',jumlah:1,kondisi:'baik',deskripsi:'Untuk upacara, rapat, dan acara besar.'}
+  ],
+  r: [
+    {id:1,no:'LPR-001',pelapor:'Aisyah',kelas:'XI IPA 2',fasilitas:'Toilet Siswa',lokasi:'Toilet lantai 1',tanggal:'2026-10-05',deskripsi:'Keran air patah dan bocor.',urgensi:'Tinggi',status:2,foto:null},
+    {id:2,no:'LPR-002',pelapor:'Rizky',kelas:'X IPS 1',fasilitas:'Laboratorium Komputer',lokasi:'Meja 12',tanggal:'2026-10-08',deskripsi:'Monitor tidak menyala.',urgensi:'Sedang',status:1,foto:null},
+    {id:3,no:'LPR-003',pelapor:'Nadia',kelas:'XII IPA 1',fasilitas:'Ruang Kelas',lokasi:'XII IPA 1',tanggal:'2026-10-12',deskripsi:'Lampu kelas mati.',urgensi:'Rendah',status:0,foto:null},
+    {id:4,no:'LPR-004',pelapor:'Dimas',kelas:'XI IPS 3',fasilitas:'Aula Sekolah',lokasi:'Panggung',tanggal:'2026-09-28',deskripsi:'Mikrofon rusak, sudah diganti.',urgensi:'Sedang',status:3,foto:null}
+  ],
+  j: [
+    {id:1,fasilitas:'Aula Sekolah',tanggal:'2026-10-20',jam:'08:00–11:00',kegiatan:'Seminar Karier'},
+    {id:2,fasilitas:'Laboratorium IPA',tanggal:'2026-10-21',jam:'09:00–11:00',kegiatan:'Praktikum Kimia XI'}
+  ]
+};
+
+// ---------- Lapisan IndexedDB ----------
+const DB_NAME = 'sifas', DB_VER = 1;
+let idb;
+const db = { f: [], r: [], j: [] };           // salinan data di memori (dimuat ulang dari IndexedDB)
+
+const openDB = () => new Promise((res, rej) => {
+  const q = indexedDB.open(DB_NAME, DB_VER);
+  q.onupgradeneeded = () => {
+    const d = q.result;
+    for (const s of ['f','r','j']) if (!d.objectStoreNames.contains(s)) d.createObjectStore(s, { keyPath:'id', autoIncrement:true });
+    if (!d.objectStoreNames.contains('users')) d.createObjectStore('users', { keyPath:'username' });
+    if (!d.objectStoreNames.contains('meta'))  d.createObjectStore('meta',  { keyPath:'key' });
+  };
+  q.onsuccess = () => res(q.result);
+  q.onerror = () => rej(q.error);
+  q.onblocked = () => rej(new Error('Database terkunci oleh tab lain. Tutup tab SIFAS lain lalu muat ulang.'));
+});
+const tx = (stores, mode = 'readonly') => idb.transaction(stores, mode);
+const req = r => new Promise((res, rej) => { r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); });
+const txDone = t => new Promise((res, rej) => { t.oncomplete = () => res(); t.onerror = () => rej(t.error); t.onabort = () => rej(t.error || new Error('Transaksi dibatalkan')); });
+const dbAll = s => req(tx(s).objectStore(s).getAll());
+const dbGet = (s, k) => req(tx(s).objectStore(s).get(k));
+async function dbPut(s, o) { const t = tx(s, 'readwrite'); const p = req(t.objectStore(s).put(o)); await txDone(t); return p; }
+async function dbDel(s, k) { const t = tx(s, 'readwrite'); t.objectStore(s).delete(k); await txDone(t); }
+
+// Tambah laporan: id otomatis, lalu nomor "LPR-xxx" diisi dalam transaksi yang sama
+function addReport(o) {
+  return new Promise((res, rej) => {
+    const t = tx('r', 'readwrite'), s = t.objectStore('r');
+    s.add(o).onsuccess = e => { o.id = e.target.result; o.no = 'LPR-' + String(o.id).padStart(3, '0'); s.put(o); };
+    t.oncomplete = () => res(o);
+    t.onerror = t.onabort = () => rej(t.error || new Error('Gagal menyimpan laporan'));
+  });
+}
+
+// Muat ulang semua data dari IndexedDB ke memori
+const urlCache = new Map();                   // Blob -> object URL
+async function loadAll() {
+  const [f, r, j] = await Promise.all([dbAll('f'), dbAll('r'), dbAll('j')]);
+  urlCache.forEach(u => URL.revokeObjectURL(u)); urlCache.clear();
+  db.f = f; db.r = r; db.j = j;
+}
+const blobUrl = b => { if (!(b instanceof Blob)) return ''; let u = urlCache.get(b); if (!u) { u = URL.createObjectURL(b); urlCache.set(b, u); } return u; };
+
+// ---------- Hash password (PBKDF2 bila tersedia, cadangan sederhana bila tidak) ----------
+const hex = b => [...new Uint8Array(b)].map(x => x.toString(16).padStart(2, '0')).join('');
+async function hashPw(pw, salt, algo) {
+  if (algo === 'pbkdf2') {
+    if (!(window.crypto && crypto.subtle)) throw new Error('Browser ini tidak mendukung crypto.subtle (buka lewat https atau localhost).');
+    const enc = new TextEncoder();
+    const key = await crypto.subtle.importKey('raw', enc.encode(pw), 'PBKDF2', false, ['deriveBits']);
+    return hex(await crypto.subtle.deriveBits({ name:'PBKDF2', hash:'SHA-256', salt:enc.encode(salt), iterations:100000 }, key, 256));
+  }
+  const s = salt + pw; let h1 = 0xdeadbeef, h2 = 0x41c6ce57;   // cyrb53 (hanya cadangan)
+  for (let i = 0; i < s.length; i++) { const c = s.charCodeAt(i); h1 = Math.imul(h1 ^ c, 2654435761); h2 = Math.imul(h2 ^ c, 1597334677); }
+  h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909);
+  h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909);
+  return (4294967296 * (2097151 & h2) + (h1 >>> 0)).toString(16);
+}
+async function makeUser(username, pw) {
+  const salt = hex(crypto.getRandomValues(new Uint8Array(16)));
+  const algo = (window.crypto && crypto.subtle) ? 'pbkdf2' : 'simple';
+  return { username, salt, algo, hash: await hashPw(pw, salt, algo) };
+}
+const verifyPw = async (rec, pw) => (await hashPw(pw, rec.salt, rec.algo)) === rec.hash;
+
+// ---------- Inisialisasi data awal + migrasi dari LocalStorage lama ----------
+function legacy(k) { try { const v = JSON.parse(localStorage.getItem('sifas_' + k)); return Array.isArray(v) ? v : null; } catch { return null; } }
+async function dataUrlToBlob(u) { try { return await (await fetch(u)).blob(); } catch { return null; } }
+
+async function seedIfNeeded() {
+  if (!(await dbGet('meta', 'seeded'))) {
+    const data = {}; let migrated = false;
+    for (const k of ['f','r','j']) { const old = legacy(k); data[k] = old || SEED[k]; if (old) migrated = true; }
+    // foto lama (base64) -> Blob
+    for (const r of data.r) r.foto = (typeof r.foto === 'string' && r.foto.startsWith('data:')) ? await dataUrlToBlob(r.foto) : (r.foto instanceof Blob ? r.foto : null);
+    const t = tx(['f','r','j','meta'], 'readwrite');
+    for (const k of ['f','r','j']) data[k].forEach(o => t.objectStore(k).put(o));
+    t.objectStore('meta').put({ key:'seeded', value:Date.now() });
+    await txDone(t);
+    if (migrated) ['f','r','j'].forEach(k => localStorage.removeItem('sifas_' + k));   // hanya dihapus setelah sukses tersimpan
+  }
+  if (!(await req(tx('users').objectStore('users').count()))) await dbPut('users', await makeUser('admin', 'admin123'));
+}
+
+// ---------- Helper ----------
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const tgl = d => new Date(d + 'T00:00:00').toLocaleDateString('id-ID', {day:'numeric', month:'long', year:'numeric'});
+const today = () => new Date(Date.now() - new Date().getTimezoneOffset()*6e4).toISOString().slice(0,10);
+const badge = (cls, t) => `<span class="badge ${cls}">${esc(t)}</span>`;
+const empty = (icon, t) => `<div class="empty"><i class="fa-solid ${icon}"></i>${t}</div>`;
+const opts = (arr, sel) => arr.map(([v,t]) => `<option value="${esc(v)}" ${v==sel?'selected':''}>${esc(t)}</option>`).join('');
+function toast(msg, err) { const t = $('#toast'); t.textContent = msg; t.style.background = err ? 'var(--merah)' : 'var(--hijau)'; t.classList.add('show'); clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove('show'), 2800); }
+function fail(err) { console.error(err); toast(err && err.name === 'QuotaExceededError' ? 'Penyimpanan penuh — hapus data/foto lama' : ((err && err.message) || 'Terjadi kesalahan'), true); }
+const toggleMenu = () => document.querySelectorAll('.sidebar').forEach(s => s.classList.toggle('open'));
+const isAdmin = () => sessionStorage.getItem('sifas_admin') === '1';
+
+let page = 'dash';
+const V = s => $('#v-' + page + ' ' + s);
+const PAGES = {};
+const refresh = async () => { await loadAll(); await PAGES[page](); };
+
+// ---------- Foto: pratinjau, kompres, lightbox ----------
+function previewFoto(input) {
+  const img = $('#rPrev');
+  if (img.dataset.u) { URL.revokeObjectURL(img.dataset.u); delete img.dataset.u; }
+  const f = input && input.files && input.files[0];
+  if (f) { img.dataset.u = URL.createObjectURL(f); img.src = img.dataset.u; img.classList.remove('hidden'); }
+  else { img.removeAttribute('src'); img.classList.add('hidden'); }
+}
+async function compressImage(file, max = 1280, q = .8) {
+  try {
+    const bmp = await createImageBitmap(file, { imageOrientation:'from-image' });
+    const s = Math.min(1, max / Math.max(bmp.width, bmp.height));
+    const c = document.createElement('canvas'); c.width = Math.round(bmp.width * s); c.height = Math.round(bmp.height * s);
+    const g = c.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, c.width, c.height); g.drawImage(bmp, 0, 0, c.width, c.height);
+    if (bmp.close) bmp.close();
+    const b = await new Promise(r => c.toBlob(r, 'image/jpeg', q));
+    return b && b.size < file.size ? b : file;
+  } catch (err) {
+    if (/^image\/(jpeg|png|webp|gif)$/.test(file.type)) return file;        // tetap bisa ditampilkan browser
+    throw new Error('Format gambar tidak didukung. Gunakan JPG, PNG, atau WebP.');
+  }
+}
+function showImg(id) {
+  const r = db.r.find(x => x.id === id);
+  if (r && r.foto) { $('#imgBig').src = blobUrl(r.foto); $('#imgModal').showModal(); }
+}
+const thumb = (r, small) => r.foto instanceof Blob ? `<img class="thumb${small ? ' sm' : ''}" src="${blobUrl(r.foto)}" onclick="showImg(${r.id})" alt="Foto kerusakan ${esc(r.no)}" title="Klik untuk memperbesar">` : '';
+
+// ---------- Dashboard (dipakai publik & admin) ----------
+let chart;
+PAGES.dash = () => {
+  const c = k => db.f.filter(f => f.kondisi === k).length;
+  V('#sTotal').textContent = db.f.length;
+  V('#sBaik').textContent = c('baik');
+  V('#sRusak').textContent = c('perawatan') + c('rusak');
+  V('#sSelesai').textContent = db.r.filter(r => r.status === 3).length;
+  if (chart) chart.destroy();
+  if (window.Chart) chart = new Chart(V('#chart'), { type:'doughnut',
+    data:{ labels:['Baik','Perlu Perawatan','Rusak'], datasets:[{ data:[c('baik'),c('perawatan'),c('rusak')], backgroundColor:['#4ade80','#fbbf24','#f87171'] }] },
+    options:{ maintainAspectRatio:false } });
+  const last = [...db.r].sort((a,b) => b.tanggal.localeCompare(a.tanggal)).slice(0,5);
+  V('#latest').innerHTML = last.length ? last.map(r => `<div class="item"><span><b>${esc(r.fasilitas)}</b><br><small>${tgl(r.tanggal)}</small></span>${badge(STAT_CLS[r.status], STAT[r.status])}</div>`).join('') : empty('fa-inbox','Belum ada laporan.');
+};
+
+// ---------- PUBLIK: Data Fasilitas ----------
+PAGES.fasilitas = () => {
+  $('#fKat').innerHTML = opts([['','Semua kategori'], ...Object.keys(CAT).map(k => [k,k])]);
+  $('#fKond').innerHTML = opts([['','Semua kondisi'], ...Object.entries(COND).map(([k,v]) => [k,v[0]])]);
+  renderFas();
+};
+function renderFas() {
+  const q = $('#fSearch').value.toLowerCase(), kat = $('#fKat').value, kon = $('#fKond').value;
+  const list = db.f.filter(f => (f.nama+f.lokasi).toLowerCase().includes(q) && (!kat || f.kategori===kat) && (!kon || f.kondisi===kon));
+  $('#facList').innerHTML = list.length ? list.map(f => `
+    <div class="card fac">
+      <div class="photo" style="${f.foto ? `background-image:url('${esc(f.foto)}')` : ''}">${f.foto ? '' : `<i class="fa-solid ${CAT[f.kategori] || 'fa-school'}"></i>`}</div>
+      <div class="body"><h3>${esc(f.nama)}</h3>
+        <p><i class="fa-solid fa-location-dot"></i> ${esc(f.lokasi)}</p>
+        <p><i class="fa-solid fa-hashtag"></i> Jumlah: ${f.jumlah}</p>
+        <p>${esc(f.deskripsi)}</p>${badge((COND[f.kondisi]||COND.baik)[1], (COND[f.kondisi]||COND.baik)[0])}</div>
+    </div>`).join('') : empty('fa-magnifying-glass','Fasilitas tidak ditemukan.');
+}
+
+// ---------- PUBLIK: Form Lapor Kerusakan ----------
+PAGES.lapor = () => { $('#rFas').innerHTML = opts(db.f.map(f => [f.nama, f.nama])); $('#rTgl').value = today(); previewFoto(null); };
+async function submitReport(e) {
+  e.preventDefault();
+  const form = e.target, btn = form.querySelector('button[type=submit]'), fd = new FormData(form), file = fd.get('foto');
+  btn.disabled = true;
+  try {
+    let foto = null;
+    if (file && file.size) {
+      if (!file.type.startsWith('image/')) throw new Error('File harus berupa gambar');
+      if (file.size > 10e6) throw new Error('Foto terlalu besar (maks. 10 MB)');
+      foto = await compressImage(file);
+    }
+    const rep = await addReport({
+      pelapor:fd.get('pelapor').trim(), kelas:fd.get('kelas').trim(), fasilitas:fd.get('fasilitas'),
+      lokasi:fd.get('lokasi').trim(), tanggal:fd.get('tanggal'), deskripsi:fd.get('deskripsi').trim(),
+      urgensi:fd.get('urgensi'), status:0, foto });
+    form.reset(); previewFoto(null);
+    toast('✅ Laporan ' + rep.no + ' berhasil dikirim!');
+    setTimeout(() => { if (page === 'lapor') location.hash = '#/status'; }, 1200);
+  } catch (err) { fail(err); }
+  finally { btn.disabled = false; }
+}
+
+// ---------- PUBLIK: Status Laporan ----------
+PAGES.status = () => renderStatus();
+function renderStatus() {
+  const q = $('#sSearch').value.toLowerCase();
+  const list = db.r.filter(r => (r.no + r.fasilitas).toLowerCase().includes(q)).sort((a,b) => b.id - a.id);
+  $('#statusList').innerHTML = list.length ? list.map(r => `
+    <div class="card rep"><div class="item" style="border:0"><span><b>${esc(r.no)}</b> — ${esc(r.fasilitas)}<br><small>${tgl(r.tanggal)} · ${esc(r.pelapor)} (${esc(r.kelas)})</small></span>
+      <span>${badge(URG_CLS[r.urgensi], 'Urgensi ' + r.urgensi)} ${badge(STAT_CLS[r.status], STAT[r.status])}</span></div>
+      ${thumb(r)}
+      <div class="progress"><div style="width:${(r.status+1)*25}%"></div></div></div>`).join('') : empty('fa-clipboard','Belum ada laporan yang cocok.');
+}
+
+/* ===== ADMIN =====
+   ⚠️ Login ini hanya di sisi browser (tidak ada server) — belum aman untuk produksi. */
+
+// ---------- Login / Logout / Ganti password ----------
+async function login(e) {
+  e.preventDefault();
+  const btn = e.target.querySelector('button.btn:not(.ghost)'); btn.disabled = true;
+  try {
+    const u = $('#uName').value.trim(), rec = await dbGet('users', u);
+    if (rec && await verifyPw(rec, $('#uPass').value)) {
+      sessionStorage.setItem('sifas_admin', '1'); sessionStorage.setItem('sifas_user', u);
+      $('#uPass').value = ''; location.hash = '#/adash';
+    } else toast('Username/password salah', true);
+  } catch (err) { fail(err); }
+  finally { btn.disabled = false; }
+}
+function logout() { sessionStorage.removeItem('sifas_admin'); sessionStorage.removeItem('sifas_user'); location.hash = '#/login'; }
+function openPw() { for (const id of ['pwOld','pwNew','pwNew2']) $('#' + id).value = ''; $('#pwModal').showModal(); }
+async function changePw(e) {
+  e.preventDefault();
+  try {
+    const u = sessionStorage.getItem('sifas_user') || 'admin', rec = await dbGet('users', u);
+    if (!rec || !(await verifyPw(rec, $('#pwOld').value))) return toast('Password lama salah', true);
+    if ($('#pwNew').value.length < 6) return toast('Password baru minimal 6 karakter', true);
+    if ($('#pwNew').value !== $('#pwNew2').value) return toast('Konfirmasi password tidak sama', true);
+    await dbPut('users', await makeUser(u, $('#pwNew').value));
+    $('#pwModal').close(); toast('Password berhasil diganti');
+  } catch (err) { fail(err); }
+}
+PAGES.login = () => {};
+PAGES.adash = PAGES.dash;
+
+const kondOpts = Object.entries(COND).map(([k,v]) => [k,v[0]]);
+const delBtn = (k, id) => `<button class="btn sm danger" onclick="delItem('${k}',${id})"><i class="fa-solid fa-trash"></i></button>`;
+
+// ---------- Kelola Fasilitas ----------
+PAGES.afas = () => {
+  $('#mKat').innerHTML = opts(Object.keys(CAT).map(k => [k,k]));
+  $('#mKond').innerHTML = opts(kondOpts);
+  $('#aFac').innerHTML = `<table><tr><th>Nama</th><th>Kategori</th><th>Lokasi</th><th>Jml</th><th>Kondisi</th><th>Aksi</th></tr>` + db.f.map(f => `
+    <tr><td>${esc(f.nama)}</td><td>${esc(f.kategori)}</td><td>${esc(f.lokasi)}</td><td>${f.jumlah}</td>
+    <td><select onchange="setKondisi(${f.id},this.value)">${opts(kondOpts, f.kondisi)}</select></td>
+    <td><button class="btn sm" onclick="openFac(${f.id})"><i class="fa-solid fa-pen"></i></button> ${delBtn('f', f.id)}</td></tr>`).join('') + `</table>`;
+};
+function openFac(id) {
+  const f = db.f.find(x => x.id === id) || { id:'', nama:'', kategori:'Pembelajaran', lokasi:'', jumlah:1, kondisi:'baik', deskripsi:'', foto:'' };
+  $('#mTitle').textContent = id ? 'Edit Fasilitas' : 'Tambah Fasilitas';
+  const form = $('#facForm');
+  for (const k of ['id','nama','kategori','lokasi','jumlah','kondisi','deskripsi','foto']) form.elements[k].value = f[k] ?? '';
+  $('#modal').showModal();
+}
+async function saveFac(e) {
+  e.preventDefault();
+  try {
+    const d = Object.fromEntries(new FormData(e.target)); d.jumlah = +d.jumlah;
+    if (d.id) {
+      const cur = db.f.find(x => x.id == d.id);
+      if (!cur) throw new Error('Data fasilitas tidak ditemukan');
+      await dbPut('f', { ...cur, ...d, id:+d.id });
+    } else { delete d.id; await dbPut('f', d); }
+    $('#modal').close(); await refresh(); toast('Data fasilitas disimpan');
+  } catch (err) { fail(err); }
+}
+async function setKondisi(id, v) {
+  try { const f = db.f.find(x => x.id === id); await dbPut('f', { ...f, kondisi:v }); f.kondisi = v; toast('Kondisi diperbarui'); }
+  catch (err) { fail(err); }
+}
+
+// ---------- Laporan Masuk ----------
+PAGES.alap = () => {
+  const list = [...db.r].sort((a,b) => b.id - a.id);
+  $('#aRep').innerHTML = list.length ? `<table><tr><th>No</th><th>Fasilitas</th><th>Pelapor</th><th>Tanggal</th><th>Urgensi</th><th>Deskripsi</th><th>Status</th><th>Aksi</th></tr>` + list.map(r => `
+    <tr><td>${esc(r.no)}</td><td>${esc(r.fasilitas)}<br><small>${esc(r.lokasi)}</small></td><td>${esc(r.pelapor)}<br><small>${esc(r.kelas)}</small></td><td>${tgl(r.tanggal)}</td>
+    <td>${badge(URG_CLS[r.urgensi], r.urgensi)}</td><td style="white-space:normal;min-width:180px">${esc(r.deskripsi)} ${thumb(r, true)}</td>
+    <td><select onchange="setStatus(${r.id},this.value)">${opts(STAT.map((s,i) => [i,s]), r.status)}</select></td><td>${delBtn('r', r.id)}</td></tr>`).join('') + `</table>` : empty('fa-inbox','Belum ada laporan masuk.');
+};
+async function setStatus(id, v) {
+  try { const r = db.r.find(x => x.id === id); await dbPut('r', { ...r, status:+v }); r.status = +v; toast('Status laporan diubah'); }
+  catch (err) { fail(err); }
+}
+
+// ---------- Jadwal Penggunaan Fasilitas ----------
+PAGES.ajad = () => {
+  $('#jFas').innerHTML = opts(db.f.map(f => [f.nama, f.nama]));
+  const list = [...db.j].sort((a,b) => a.tanggal.localeCompare(b.tanggal));
+  $('#aJad').innerHTML = list.length ? `<table><tr><th>Fasilitas</th><th>Tanggal</th><th>Jam</th><th>Kegiatan</th><th></th></tr>` + list.map(j => `
+    <tr><td>${esc(j.fasilitas)}</td><td>${tgl(j.tanggal)}</td><td>${esc(j.jam)}</td><td>${esc(j.kegiatan)}</td><td>${delBtn('j', j.id)}</td></tr>`).join('') + `</table>` : empty('fa-calendar','Belum ada jadwal.');
+};
+async function addJadwal(e) {
+  e.preventDefault();
+  try {
+    await dbPut('j', { fasilitas:$('#jFas').value, tanggal:$('#jTgl').value, jam:$('#jJam').value.trim(), kegiatan:$('#jKeg').value.trim() });
+    e.target.reset(); await refresh(); toast('Jadwal ditambahkan');
+  } catch (err) { fail(err); }
+}
+
+// ---------- Hapus (dengan konfirmasi) ----------
+async function delItem(k, id) {
+  if (!confirm('Yakin ingin menghapus data ini?')) return;
+  try { await dbDel(k, id); await refresh(); toast('Data dihapus'); }
+  catch (err) { fail(err); }
+}
+
+/* ===== ROUTER: setiap "halaman" = satu tampilan (#/nama) ===== */
+const ROLE = { dash:'public', fasilitas:'public', lapor:'public', status:'public', login:'auth', adash:'admin', afas:'admin', alap:'admin', ajad:'admin' };
+let seq = 0;
+async function route() {
+  const my = ++seq;
+  let p = location.hash.replace('#/', '') || 'dash';
+  if (!ROLE[p]) p = 'dash';
+  if (ROLE[p] === 'admin' && !isAdmin()) { location.hash = '#/login'; return; }
+  if (p === 'login' && isAdmin()) { location.hash = '#/adash'; return; }
+  try { await loadAll(); } catch (err) { return fatal(err); }
+  if (my !== seq) return;                                   // pengguna sudah pindah halaman lagi
+  page = p;
+  document.body.className = ROLE[p] === 'public' ? '' : ROLE[p];
+  document.querySelectorAll('.view').forEach(v => v.classList.toggle('hidden', v.id !== 'v-' + p));
+  document.querySelectorAll('nav a[data-p]').forEach(a => a.classList.toggle('active', a.dataset.p === p));
+  document.querySelectorAll('.sidebar').forEach(s => s.classList.remove('open'));
+  try { await PAGES[p](); } catch (err) { fail(err); }
+  scrollTo(0, 0);
+}
+
+function fatal(err) {
+  console.error(err);
+  document.body.className = '';
+  document.body.innerHTML = `<div style="max-width:520px;margin:12vh auto;padding:24px;background:#fff;border-radius:16px;box-shadow:0 6px 20px #8b5cf61f;text-align:center;font-family:sans-serif">
+    <h2 style="color:#dc2626">Database tidak dapat dibuka</h2>
+    <p style="margin:12px 0;color:#7c7390">${esc((err && err.message) || err)}</p>
+    <p style="color:#7c7390;font-size:14px">SIFAS memerlukan IndexedDB. Pastikan bukan mode penyamaran/private yang memblokir penyimpanan, lalu muat ulang halaman.</p></div>`;
+}
+
+// ---------- Mulai aplikasi ----------
+(async () => {
+  try {
+    if (!window.indexedDB) throw new Error('Browser ini tidak mendukung IndexedDB.');
+    idb = await openDB();
+    idb.onversionchange = () => { idb.close(); alert('SIFAS diperbarui di tab lain. Halaman akan dimuat ulang.'); location.reload(); };
+    await seedIfNeeded();
+    if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});   // minta agar data tidak dihapus otomatis
+  } catch (err) { return fatal(err); }
+  addEventListener('hashchange', route);
+  route();
+})();
+</script>
+</body></html>
